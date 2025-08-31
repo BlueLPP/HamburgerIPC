@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application android:label="Hamburger Service">
+        <provider
+            android:name=".TestProvider"
+            android:authorities="com.hamburger.IPCProvider"
+            android:exported="true" />
+    </application>
+</manifest>
