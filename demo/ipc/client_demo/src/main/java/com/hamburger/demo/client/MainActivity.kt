@@ -17,13 +17,13 @@ class MainActivity : AppCompatActivity() {
 
     init {
         Logger.setInterfaceLog {
-            Log.i("Hamburger", "[client][interface] $it")
+            Log.i("[Hamburger]", "[client][interface] $it")
         }
         Logger.setInternalLog {
-            Log.i("Hamburger", "[client][internal] $it")
+            Log.i("[Hamburger]", "[client][internal] $it")
         }
         Logger.setIpcLog {
-            Log.i("Hamburger", "[client][IPC] $it")
+            Log.i("[Hamburger]", "[client][IPC] $it")
         }
     }
 

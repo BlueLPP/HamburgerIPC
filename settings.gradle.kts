@@ -20,6 +20,7 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "HamburgerIPC"
+include(":ipc:annotations")
 include(":ipc:common")
 include(":ipc:client")
 include(":ipc:service")

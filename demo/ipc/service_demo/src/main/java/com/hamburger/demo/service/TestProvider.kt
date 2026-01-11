@@ -12,13 +12,13 @@ class TestProvider : IpcContentProvider() {
 
     init {
         Logger.setInterfaceLog {
-            Log.i("Hamburger", "[service][interface] $it")
+            Log.i("[Hamburger]", "[service][interface] $it")
         }
         Logger.setInternalLog {
-            Log.i("Hamburger", "[service][internal] $it")
+            Log.i("[Hamburger]", "[service][internal] $it")
         }
         Logger.setIpcLog {
-            Log.i("Hamburger", "[service][IPC] $it")
+            Log.i("[Hamburger]", "[service][IPC] $it")
         }
     }
 

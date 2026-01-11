@@ -16,17 +16,16 @@ import java.util.Set;
 
 final class HamburgerUtils {
 
-    private static final String KEY_METHOD_NAME = "method";
-    private static final String KEY_METHOD_COUNT = "count";
     private static final String KEY_METHOD_TYPE = "type";
     private static final String KEY_METHOD_ARG = "arg";
     private static final String KEY_METHOD_RESULT = "result";
+    private static final String KEY_COLLECTION_COUNT = "count";
 
     private static String parcelMapKey(String key) {
         return "key[" + key + "]";
     }
 
-    private static String unParcelMapKey(String key) {
+    private static String parseMapKey(String key) {
         if (key.length() <= 5) {
             throw new IllegalArgumentException("Map key error. " + key);
         }
@@ -35,13 +34,11 @@ final class HamburgerUtils {
 
     static Bundle methodToBundle(Method method, Object[] args) {
         Logger.getInternalLog().log("[methodToBundle] method: " + method + ", args: " + Arrays.toString(args));
-        String methodName = method.getName();
+        String methodName = getMethodName(method);
         Logger.getInternalLog().log("[methodToBundle] methodName: " + methodName);
 
         Bundle result = new Bundle();
-        result.putString(KEY_METHOD_NAME, methodName);
         Class<?>[] parameterTypes = method.getParameterTypes();
-        result.putInt(KEY_METHOD_COUNT, parameterTypes.length);
 
         for (int i = 0, count = parameterTypes.length; i < count; i++) {
             Class<?> type = parameterTypes[i];
@@ -106,7 +103,7 @@ final class HamburgerUtils {
                 // 处理对象数组（包括Parcelable等）
                 Bundle arrayBundle = new Bundle();
                 int length = Array.getLength(obj);
-                arrayBundle.putInt(KEY_METHOD_COUNT, length);
+                arrayBundle.putInt(KEY_COLLECTION_COUNT, length);
                 for (int i = 0; i < length; i++) {
                     putToBundle(arrayBundle, Integer.toString(i), componentType, Array.get(obj, i));
                 }
@@ -118,7 +115,7 @@ final class HamburgerUtils {
             Bundle collectionBundle = new Bundle();
             Collection<?> collection = (Collection<?>) obj;
             int length = collection.size();
-            collectionBundle.putInt(KEY_METHOD_COUNT, length);
+            collectionBundle.putInt(KEY_COLLECTION_COUNT, length);
             int i = 0;
             boolean putType = false;
             for (Object item : collection) {
@@ -197,36 +194,9 @@ final class HamburgerUtils {
         return bundle;
     }
 
-    static Object invokeMethod(Object obj, Bundle bundle) {
-        String methodName = bundle.getString(KEY_METHOD_NAME);
-        if (methodName == null || methodName.isEmpty()) {
-            throw new IllegalArgumentException("No method name. ");
-        }
-        int count = bundle.getInt(KEY_METHOD_COUNT);
-        Class<?>[] classes = count == 0 ? null : new Class[count];
-        for (int i = 0; i < count; i++) {
-            Bundle paramBundle = bundle.getBundle(Integer.toString(i));
-            if (paramBundle == null) {
-                throw new IllegalArgumentException("Method has no parameter " + i + ".");
-            }
-            String type = paramBundle.getString(KEY_METHOD_TYPE);
-            if (type == null || type.isEmpty()) {
-                throw new IllegalArgumentException("Method parameter " + i + " name is null. ");
-            }
-            try {
-                classes[i] = Class.forName(type);
-            } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException("Method parameter " + i + " type error: " + type, e);
-            }
-        }
-        Logger.getInternalLog().log("[invokeMethod] count: " + count + ", classes: " + Arrays.toString(classes));
-
-        Method method;
-        try {
-            method = obj.getClass().getMethod(methodName, classes);
-        } catch (NoSuchMethodException e) {
-            throw new IllegalArgumentException("No method error. " + methodName, e);
-        }
+    static Object invokeMethod(Object obj, Method method, Bundle bundle) {
+        int count = method.getParameterCount();
+        Class<?>[] classes = method.getParameterTypes();
         Object[] args = count == 0 ? null : new Object[count];
         for (int i = 0; i < count; i++) {
             Bundle paramBundle = bundle.getBundle(Integer.toString(i));
@@ -294,7 +264,7 @@ final class HamburgerUtils {
                 // 处理对象数组
                 Bundle arrayBundle = bundle.getBundle(key);
                 if (arrayBundle != null) {
-                    int length = arrayBundle.getInt(KEY_METHOD_COUNT, 0);
+                    int length = arrayBundle.getInt(KEY_COLLECTION_COUNT, 0);
                     Object array = Array.newInstance(componentType, length);
                     for (int i = 0; i < length; i++) {
                         Object element = getFromBundle(arrayBundle, Integer.toString(i), componentType);
@@ -309,7 +279,7 @@ final class HamburgerUtils {
         else if (Collection.class.isAssignableFrom(type)) {
             Bundle collectionBundle = bundle.getBundle(key);
             if (collectionBundle != null) {
-                int length = collectionBundle.getInt(KEY_METHOD_COUNT, 0);
+                int length = collectionBundle.getInt(KEY_COLLECTION_COUNT, 0);
                 Collection collection = Set.class.isAssignableFrom(type) ? new HashSet<>() : new ArrayList<>();
                 String itemType = collectionBundle.getString(KEY_METHOD_TYPE);
                 if (itemType == null || itemType.isEmpty()) {
@@ -344,7 +314,7 @@ final class HamburgerUtils {
                         if (!KEY_METHOD_TYPE.equals(mapKey)) {
                             Object value = getFromBundle(mapBundle, mapKey, itemClass);
                             Logger.getInternalLog().log("map key: " + mapKey + ", value: " + value);
-                            map.put(unParcelMapKey(mapKey), value);
+                            map.put(parseMapKey(mapKey), value);
                         }
                     }
                 } catch (ClassNotFoundException e) {
@@ -400,6 +370,11 @@ final class HamburgerUtils {
         if (hamburger == null) {
             throw new IllegalArgumentException("API declarations must be use @Hamburger.");
         }
-        return hamburger.name();
+        return hamburger.value();
+    }
+
+    static String getMethodName(Method method) {
+        Hamburger hamburger = method.getAnnotation(Hamburger.class);
+        return hamburger == null ? method.getName() : hamburger.value();
     }
 }

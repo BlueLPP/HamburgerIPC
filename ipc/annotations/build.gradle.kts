@@ -1,9 +1,9 @@
 plugins {
     alias(libs.plugins.android.library)
-    alias(libs.plugins.kotlin.android)}
+}
 
 android {
-    namespace = "com.hamburger.ipc.service"
+    namespace = "com.hamburger.ipc.annotations"
     compileSdk = 36
 
     defaultConfig {
@@ -29,5 +29,4 @@ android {
 }
 
 dependencies {
-    api(project(":ipc:common"))
 }

@@ -52,7 +52,7 @@ public class HamburgerIPC {
         Bundle response = getApplication().getContentResolver().call(
                 Uri.parse("content://" + uri),
                 className,
-                "",
+                HamburgerUtils.getMethodName(method),
                 request
         );
         Class<?> returnType = method.getReturnType();

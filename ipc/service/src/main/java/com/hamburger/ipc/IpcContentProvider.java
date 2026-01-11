@@ -3,6 +3,8 @@ package com.hamburger.ipc;
 import android.content.ContentProvider;
 import android.os.Bundle;
 
+import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,8 +19,9 @@ public abstract class IpcContentProvider extends ContentProvider {
         List<IpcObjectMap> list = register();
         for (IpcObjectMap map : list) {
             Register register = getRegister(map.authority);
-            register.objectMap.put(map.className, map.impl);
-            Logger.getInternalLog().log("register class: " + map.className + " for " + map.authority);
+            Service service = new Service(map.interfaceClass, map.impl);
+            register.objectMap.put(service.className, service);
+            Logger.getInternalLog().log("register class: " + service.className + " for " + map.authority);
         }
         return true;
     }
@@ -39,15 +42,20 @@ public abstract class IpcContentProvider extends ContentProvider {
     @Override
     public Bundle call(String authority, String method, String arg, Bundle extras) {
         String callingPackage = getCallingPackage();
-        Logger.getIpcLog().log("[receive] authority: " + authority + ", callingPackage: " + callingPackage + ", method: " + method);
-        Object impl = getImpl(authority, method);
-        if (impl == null) {
-            Logger.getIpcLog().log("[return] No impl error. " + authority + ", " + method);
-            throw new IllegalArgumentException("No impl error. " + authority + ", " + method);
+        Logger.getIpcLog().log("[receive] authority: " + authority + ", callingPackage: " + callingPackage + ", method: " + method + ", arg: " + arg);
+        Service service = getService(authority, method);
+        if (service == null) {
+            Logger.getIpcLog().log("[return] No impl class error. " + authority + ", " + method);
+            throw new IllegalArgumentException("No impl class error. " + authority + ", " + method);
+        }
+        Method serviceMethod = service.methodMap.get(arg);
+        if (serviceMethod == null) {
+            Logger.getIpcLog().log("[return] No impl method error. " + authority + ", " + method);
+            throw new IllegalArgumentException("No impl method error. " + authority + ", " + method);
         }
         try {
             HamburgerBinder.setCallPackage(callingPackage);
-            Object obj = HamburgerUtils.invokeMethod(impl, extras);
+            Object obj = HamburgerUtils.invokeMethod(service.impl, serviceMethod, extras);
             Bundle bundle = HamburgerUtils.methodResultToBundle(obj);
             Logger.getIpcLog().log("[return] authority: " + authority + ", callingPackage: " + callingPackage + ", method: " + method + ", result: " + bundle);
             return bundle;
@@ -57,26 +65,52 @@ public abstract class IpcContentProvider extends ContentProvider {
         }
     }
 
-    private Object getImpl(String authority, String className) {
-        Object obj = null;
+    private Service getService(String authority, String className) {
+        Service service = null;
         Register register = registerMap.get(authority);
         if (register != null) {
-            obj = register.objectMap.get(className);
+            service = register.objectMap.get(className);
         }
-        if (obj == null) {
+        if (service == null) {
             return allRegister.objectMap.get(className);
         }
-        return obj;
+        return service;
     }
 
     public abstract List<IpcObjectMap> register();
 
     private static class Register {
         final String authority;
-        final Map<String, Object> objectMap = new HashMap<>();
+        final Map<String, Service> objectMap = new HashMap<>();
 
         Register(String authority) {
             this.authority = authority;
+        }
+    }
+
+    private static class Service {
+        final Class<?> interfaceClass;
+        final Object impl;
+        final String className;
+        final Map<String, Method> methodMap;
+
+        public Service(Class<?> interfaceClass, Object impl) {
+            this.interfaceClass = interfaceClass;
+            this.impl = impl;
+            this.className = HamburgerUtils.getInterfaceName(interfaceClass);
+            Logger.getInternalLog().log("Service: " + className + ", " + interfaceClass + ", " + impl);
+
+            Map<String, Method> methods = new HashMap<>();
+            for (Method method : interfaceClass.getMethods()) {
+                String methodName = HamburgerUtils.getMethodName(method);
+                Logger.getInternalLog().log(className + " add " + methodName);
+                Method put = methods.put(methodName, method);
+                if (put != null) {
+                    Logger.getInternalLog().log("Duplicate method: " + methodName);
+                    throw new IPCException("Duplicate method: " + methodName);
+                }
+            }
+            this.methodMap = Collections.unmodifiableMap(methods);
         }
     }
 
@@ -84,7 +118,6 @@ public abstract class IpcContentProvider extends ContentProvider {
         public final String authority;
 
         public final Class<?> interfaceClass;
-        public final String className;
         public final Object impl;
 
         public IpcObjectMap(Class<?> interfaceClass, Object impl) {
@@ -104,7 +137,6 @@ public abstract class IpcContentProvider extends ContentProvider {
             this.authority = authority;
             this.interfaceClass = interfaceClass;
             this.impl = impl;
-            this.className = HamburgerUtils.getInterfaceName(interfaceClass);
         }
     }
 }
