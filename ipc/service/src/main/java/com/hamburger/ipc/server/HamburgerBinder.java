@@ -1,4 +1,4 @@
-package com.hamburger.ipc;
+package com.hamburger.ipc.server;
 
 import android.os.Binder;
 

@@ -1,6 +1,6 @@
 package com.hamburger.common
 
-import com.hamburger.ipc.Hamburger
+import com.hamburger.ipc.annotations.Hamburger
 
 @Hamburger("TestInterface")
 interface TestInterface {

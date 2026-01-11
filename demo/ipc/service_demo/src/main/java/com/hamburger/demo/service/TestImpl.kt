@@ -3,7 +3,7 @@ package com.hamburger.demo.service
 import android.util.Log
 import com.hamburger.common.Data1
 import com.hamburger.common.TestInterface
-import com.hamburger.ipc.HamburgerBinder
+import com.hamburger.ipc.server.HamburgerBinder
 
 private const val TAG = "Hamburger.Service"
 

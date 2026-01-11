@@ -1,10 +1,10 @@
 package com.hamburger.common
 
-import com.hamburger.ipc.Hamburger
+import com.hamburger.ipc.annotations.Hamburger
 
-@Hamburger(name = "TestInterface2")
+@Hamburger("TestInterface2")
 interface TestInterface2 {
 
-//    @Hamburger(name = "test")
+    //    @Hamburger(name = "test")
     fun test()
 }

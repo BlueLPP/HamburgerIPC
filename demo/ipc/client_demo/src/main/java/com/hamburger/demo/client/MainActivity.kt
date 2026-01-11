@@ -11,7 +11,7 @@ import androidx.navigation.ui.navigateUp
 import androidx.navigation.ui.setupActionBarWithNavController
 import com.google.android.material.snackbar.Snackbar
 import com.hamburger.demo.client.databinding.ActivityMainBinding
-import com.hamburger.ipc.Logger
+import com.hamburger.ipc.log.Logger
 
 class MainActivity : AppCompatActivity() {
 

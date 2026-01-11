@@ -1,4 +1,4 @@
-package com.hamburger.ipc;
+package com.hamburger.ipc.annotations;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

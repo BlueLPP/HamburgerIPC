@@ -5,8 +5,8 @@ import android.database.Cursor
 import android.net.Uri
 import android.util.Log
 import com.hamburger.common.TestInterface
-import com.hamburger.ipc.IpcContentProvider
-import com.hamburger.ipc.Logger
+import com.hamburger.ipc.log.Logger
+import com.hamburger.ipc.server.IpcContentProvider
 
 class TestProvider : IpcContentProvider() {
 
@@ -27,7 +27,7 @@ class TestProvider : IpcContentProvider() {
         projection: Array<out String>?,
         selection: String?,
         selectionArgs: Array<out String>?,
-        sortOrder: String?
+        sortOrder: String?,
     ): Cursor? {
         throw UnsupportedOperationException()
     }
@@ -48,7 +48,7 @@ class TestProvider : IpcContentProvider() {
         uri: Uri,
         values: ContentValues?,
         selection: String?,
-        selectionArgs: Array<out String>?
+        selectionArgs: Array<out String>?,
     ): Int {
         throw UnsupportedOperationException()
     }

@@ -1,4 +1,4 @@
-package com.hamburger.ipc;
+package com.hamburger.ipc.server;
 
 public class IPCException extends RuntimeException {
     public IPCException() {

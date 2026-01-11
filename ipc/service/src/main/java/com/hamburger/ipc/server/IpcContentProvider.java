@@ -1,9 +1,14 @@
-package com.hamburger.ipc;
+package com.hamburger.ipc.server;
 
 import android.content.ContentProvider;
 import android.os.Bundle;
 
+import com.hamburger.ipc.HamburgerUtils;
+import com.hamburger.ipc.bundle.BundleServerConverter;
+import com.hamburger.ipc.log.Logger;
+
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +18,12 @@ public abstract class IpcContentProvider extends ContentProvider {
 
     private final Map<String, Register> registerMap = new HashMap<>();
     private final Register allRegister = new Register("");
+    private final ServerConverter converter;
+
+    {
+        ServerConverter serverConverter = converter();
+        converter = serverConverter == null ? new BundleServerConverter() : serverConverter;
+    }
 
     @Override
     public boolean onCreate() {
@@ -55,13 +66,21 @@ public abstract class IpcContentProvider extends ContentProvider {
         }
         try {
             HamburgerBinder.setCallPackage(callingPackage);
-            Object obj = HamburgerUtils.invokeMethod(service.impl, serviceMethod, extras);
-            Bundle bundle = HamburgerUtils.methodResultToBundle(obj);
+
+            Object[] args = converter.parameters(serviceMethod, extras);
+
+            Logger.getInterfaceLog().log("[request] method: " + method + ", args: " + Arrays.toString(args));
+            Object result = serviceMethod.invoke(service.impl, args);
+            Logger.getInterfaceLog().log("[response] method: " + method + ", result: " + result);
+
+            Bundle bundle = converter.result(serviceMethod, result);
             Logger.getIpcLog().log("[return] authority: " + authority + ", callingPackage: " + callingPackage + ", method: " + method + ", result: " + bundle);
             return bundle;
         } catch (RuntimeException e) {
             Logger.getIpcLog().log("[return] error: " + e.getMessage());
             throw e;
+        } catch (ReflectiveOperationException e) {
+            throw new IllegalArgumentException("Invoke method error. ", e);
         }
     }
 
@@ -75,6 +94,10 @@ public abstract class IpcContentProvider extends ContentProvider {
             return allRegister.objectMap.get(className);
         }
         return service;
+    }
+
+    public ServerConverter converter() {
+        return null;
     }
 
     public abstract List<IpcObjectMap> register();

@@ -6,12 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
-import com.hamburger.demo.client.databinding.FragmentFirstBinding
 import com.hamburger.common.Data1
 import com.hamburger.common.Data2
 import com.hamburger.common.TestInterface
 import com.hamburger.common.TestInterface2
-import com.hamburger.ipc.HamburgerIPC
+import com.hamburger.demo.client.databinding.FragmentFirstBinding
+import com.hamburger.ipc.bundle.BundleClientConverter
+import com.hamburger.ipc.client.HamburgerIPC
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -20,7 +21,9 @@ private const val TAG = "Hamburger.Client"
 
 class FirstFragment : Fragment() {
 
-    private val ipc = HamburgerIPC.Builder().uri("com.hamburger.IPCProvider").build()
+    private val ipc = HamburgerIPC.Builder()
+        .uri("com.hamburger.IPCProvider")
+        .build()
 
     private var _binding: FragmentFirstBinding? = null
 
@@ -40,15 +43,14 @@ class FirstFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         binding.buttonFirst.setOnClickListener {
             try {
-                ipc.create(TestInterface2::class.java).test()
+                ipc?.create(TestInterface2::class.java)?.test()
             } catch (e: Exception) {
                 Log.e(TAG, "click TestInterface2", e)
             }
             try {
-                val test = ipc.create(TestInterface::class.java)
+                val test: TestInterface = ipc?.create(TestInterface::class.java)!!
                 test.set(System.currentTimeMillis().toString())
                 Log.i(TAG, "set done")
                 Log.i(TAG, "get: ${test.get()}")
